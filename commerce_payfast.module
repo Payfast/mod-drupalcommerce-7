@@ -181,8 +181,6 @@ function commerce_payfast_process_itn( $payment_method )
 
     require_once ( 'payfast_common.inc' );
 
-    $pfHost = $server = commerce_payfast_server_url( $payment_method['settings']['server'] );
-
     if ( ! pfValidIP( $_SERVER['REMOTE_ADDR'] ) )
     {
         watchdog( 'commerce_payfast', 'PayFast REMOTE_IP mismatch: ' );
@@ -223,6 +221,8 @@ function commerce_payfast_process_itn( $payment_method )
 
     $itnVerifyRequest = implode( '&', $itnPostDataValuePairs );
 
+	$pfHost = $server = commerce_payfast_server_url( $payment_method['settings']['server'] );
+
     if ( ! pfValidData( $pfHost, $itnVerifyRequest, "https://$pfHost/eng/query/validate" ) )
     {
         watchdog( 'commerce_payfast', 'ITN POST data not verified', array(), WATCHDOG_ERROR );
@@ -233,17 +233,15 @@ function commerce_payfast_process_itn( $payment_method )
     // Exit if the ITN has already been processed.
     if ( ! empty( $itn['pf_payment_id'] ) && $prior_itn = commerce_payfast_itn_load( $itn['pf_payment_id'] ) )
     {
-        if ( $prior_itn['payment_status'] == $itn['payment_status'] )
-        {
-            watchdog( 'commerce_payfast', 'Attempted to process an ITN that has already been processed with transaction ID @txn_id.', array( '@txn_id' => $itn['pf_payment_id'] ),
-                WATCHDOG_NOTICE );
+            watchdog( 'commerce_payfast', 'Attempted to process an ITN that has already been processed with transaction ID @txn_id.', 
+			array( '@txn_id' => $itn['pf_payment_id'] ), WATCHDOG_NOTICE );
             return false;
-        }
     }
 
     list( $order_id, $timestamp ) = explode( '-', $itn['m_payment_id'] );
 
 	$order = false;
+
 	if (! empty($order_id))
 		// Load the order in question and validate that the m_payment_id exists
 		$order = commerce_order_load( $order_id );
@@ -252,32 +250,21 @@ function commerce_payfast_process_itn( $payment_method )
         watchdog( 'commerce_payfast', 'Could not find order matching ITN order #', array(), WATCHDOG_ERROR );
         return false;
     }
+	$order_id = $order->order_id;
 
     // Set the key payment method variables
     $merchant_settings = array( 'id' => $payment_method['settings']['merchant_id'], 'key' => $payment_method['settings']['merchant_key'], );
 
-    // Allow multi-seller stores by providing a hook to alter the merchant info
-    // just prior to validation.
-    $hook = 'commerce_payfast_merchant_alter';
-    foreach ( module_implements( $hook ) as $module )
-    {
-        $function = $module . '_' . $hook;
-        $function( $merchant_settings, $order, $payment_method );
-    }
-
     // Validate the ITN by checking the merchant_id and merchant_key
     if ( $merchant_settings['id'] != $itn['merchant_id'] )
     {
-        commerce_payment_redirect_pane_previous_page( $order );
-        watchdog( 'commerce_payfast', 'ITN rejected: Invalid merchant_id specified (@merchant_id).', array( '@merchant_id' => $itn['merchant_id'] ),
-            WATCHDOG_ERROR );
+		watchdog( 'commerce_payfast', 'ITN rejected: Invalid merchant_id specified (@merchant_id).', array( '@merchant_id' => $itn['merchant_id'] ), WATCHDOG_ERROR );
         return false;
     }
 
     // Unknown status
     if ( $itn['payment_status'] != 'COMPLETE' )
     {
-        commerce_payment_redirect_pane_previous_page( $order );
         watchdog( 'commerce_payfast', 'Invalid ITN payment status: @payment_status.', array( '@payment_status' => $itn['payment_status'] ), WATCHDOG_ERROR );
         return false;
     }
@@ -296,23 +283,13 @@ function commerce_payfast_process_itn( $payment_method )
 
     commerce_payment_transaction_save( $transaction );
 
-    commerce_payment_redirect_pane_next_page( $order );
-    watchdog( 'commerce_payfast', 'ITN processed for Order @order_number with ID @txn_id.', array( '@txn_id' => $itn['pf_payment_id'], '@order_number' =>
-        $order->order_number ), WATCHDOG_INFO );
-
-    // Necessary to trigger order completion
-    $order = commerce_order_status_update( $order, 'checkout_complete' );
-    commerce_checkout_complete( $order );
+    watchdog( 'commerce_payfast', 'Valid ITN processed for Order @order_number with ID @txn_id.', 
+	array( '@txn_id' => $itn['pf_payment_id'], '@order_number' => $order->order_number ), WATCHDOG_INFO );
 
     $itn['transaction_id'] = $transaction->transaction_id;
     $itn['order_id'] = $order->order_id;
     $itn['server'] = $server;
     commerce_payfast_itn_save( $itn );
-    // Invoke the hook here so implementations have access to the order and
-    // payment method if available and a saved ITN array that includes the
-    // payment transaction ID if created in the payment method's default
-    // process callback.
-    module_invoke_all( 'commerce_payfast_itn_process', $order, $payment_method, $itn );
 }
 
 /**
