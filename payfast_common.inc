@@ -278,10 +278,6 @@ function pfValidIP( $sourceIP )
         'sandbox.payfast.co.za',
         'w1w.payfast.co.za',
         'w2w.payfast.co.za',
-        'www.payfast.ben',
-        'payfast.ben',
-        'www.payfast.local',
-        'payfast.local',
         );
 
     $validIps = array();

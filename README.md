@@ -1,7 +1,5 @@
-mod-drupalcommerce-7
-====================
-
-PayFast Module for Drupal Commerce
+Drupal Commerce Payfast payment module 1.0.0
+=============================================
 
 Copyright © 2011 PayFast (Pty) Ltd
 

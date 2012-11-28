@@ -240,11 +240,12 @@ function commerce_payfast_process_itn( $payment_method )
 
     list( $order_id, $timestamp ) = explode( '-', $itn['m_payment_id'] );
 
-	$order = false;
-
-	if (! empty($order_id))
-		// Load the order in question and validate that the m_payment_id exists
-		$order = commerce_order_load( $order_id );
+     $order = false;
+	
+      if (! empty($order_id))
+	// Load the order in question and validate that the m_payment_id exists
+	$order = commerce_order_load( $order_id );
+		
     if ( ! $order )
     {
         watchdog( 'commerce_payfast', 'Could not find order matching ITN order #', array(), WATCHDOG_ERROR );
