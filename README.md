@@ -1,4 +1,4 @@
-Drupal Commerce Payfast payment module 1.0.0
+Drupal Commerce Payfast payment module 1.0.1
 =============================================
 
 Copyright © 20112PayFast (Pty) Ltd

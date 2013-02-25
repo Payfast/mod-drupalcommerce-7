@@ -53,13 +53,13 @@ function commerce_payfast_settings_form( $settings = null )
         '#type' => 'textfield', 
         '#title' => t( 'PayFast Merchant ID' ), 
         '#description' => t( 'The Merchant ID as given by the PayFast system. Used to uniquely identify the receiving account.' ),
-        '#default_value' => isset( $settings['merchant_id'] ) ? $settings['merchant_id'] : '', '#required' => true, );
+        '#default_value' => isset( $settings['merchant_id'] ) ? $settings['merchant_id'] : '10000103', '#required' => true, );
 
     $form['merchant_key'] = array( 
         '#type' => 'textfield', 
         '#title' => t( 'PayFast Merchant Key' ), 
         '#description' => t( 'The Merchant Key as given by the PayFast system.' ),
-        '#default_value' => isset( $settings['merchant_key'] ) ? $settings['merchant_key'] : '', '#required' => true, );
+        '#default_value' => isset( $settings['merchant_key'] ) ? $settings['merchant_key'] : '479f49451e829', '#required' => true, );
 
     $form['server'] = array( 
         '#type' => 'radios', '#title' => t( 'PayFast server' ), 

@@ -26,9 +26,9 @@ define('PF_DEBUG', true);
 
 //// Create user agent string
 // User agent constituents (for cURL)
-define( 'PF_SOFTWARE_NAME', 'Ubercart' );
+define( 'PF_SOFTWARE_NAME', 'drupalCommerce-7' );
 define( 'PF_SOFTWARE_VER', "7.x-1.x-dev" );
-define( 'PF_MODULE_NAME', 'PayFast-Ubercart' );
+define( 'PF_MODULE_NAME', 'PayFast Module for Drupal Commerce' );
 define( 'PF_MODULE_VER', '1.0.1' );
 
 // Features
@@ -74,9 +74,8 @@ define( 'PF_ERR_BAD_ATTENDEE_SESSION_ID', 'Incorrect attendee session id' );
     // General
 define( 'PF_MSG_OK', 'Payment was successful' );
 define( 'PF_MSG_FAILED', 'Payment has failed' );
-define( 'PF_MSG_PENDING',
-    'The payment is pending. Please note, you will receive another Instant'.
-    ' Transaction Notification when the payment status changes to'.
+define( 'PF_MSG_PENDING', 'The payment is pending. Please note, you will receive another Instant. Transaction Notification when the payment status changes to'.
+
     ' "Completed", or "Failed"' );
 
 /**
