@@ -102,14 +102,20 @@ function commerce_payfast_redirect_form( $form, &$form_state, $order, $payment_m
 
     // Build the data array that will be translated into hidden form values.
     $data = array( // Receiver Details
-        'merchant_id' => $settings['merchant_id'], 'merchant_key' => $settings['merchant_key'], 'return_url' => url( 'checkout/' . $order->order_id .
-        '/payment/return/' . $order->data['payment_redirect_key'], array( 'absolute' => true ) ), 'cancel_url' => url( 'checkout/' . $order->order_id .
-        '/payment/back/' . $order->data['payment_redirect_key'], array( 'absolute' => true ) ), 'notify_url' => url( 'commerce_payfast/itn/' . $payment_method['instance_id'],
-        array( 'absolute' => true ) ), // Payer Details
-        'name_first' => $customer['first_name'], 'name_last' => $customer['last_name'], 'email_address' => $customer['mail'], // Transaction Details
+        'merchant_id' => $settings['merchant_id'],
+        'merchant_key' => $settings['merchant_key'],
+        'return_url' => url( 'checkout/' . $order->order_id . '/payment/return/' . $order->data['payment_redirect_key'], array( 'absolute' => true ) ),
+        'cancel_url' => url( 'checkout/' . $order->order_id . '/payment/back/' . $order->data['payment_redirect_key'], array( 'absolute' => true ) ),
+        'notify_url' => url( 'commerce_payfast/itn/' . $payment_method['instance_id'], array( 'absolute' => true ) ),
+        // Payer Details
+        'name_first' => $customer['first_name'],
+        'name_last' => $customer['last_name'],
+        'email_address' => $customer['mail'],
+        // Transaction Details
         'm_payment_id' => $order->order_id . '-' . REQUEST_TIME, 'amount' => round( commerce_currency_amount_to_decimal( $amount, $currency_code ), 2 ),
         'item_name' => t( 'Order @order_number at @store', array( '@order_number' => $order->order_number, '@store' => variable_get( 'site_name', url( '<front>',
-        array( 'absolute' => true ) ) ) ) ), 'item_description' => t( 'Product count: !count', array( '!count' => commerce_line_items_quantity( $wrapper->
+        array( 'absolute' => true ) ) ) ) ),
+        'item_description' => t( 'Product count: !count', array( '!count' => commerce_line_items_quantity( $wrapper->
         commerce_line_items, commerce_product_line_item_types() ) ) ), // Transaction Options
         //'email_confirmation' => '',
     );
@@ -133,6 +139,7 @@ function commerce_payfast_redirect_form( $form, &$form_state, $order, $payment_m
         }
     }
     $data['signature'] = md5( implode( '&', $signature ) );
+    $data['user_agent'] = 'Drupal Commerce 7.x';
 
     $form['#action'] = 'https://' . commerce_payfast_server_url( $settings['server'] ) . '/eng/process';
     $form['#attributes'] = array( 'name' => 'frmPay' );
