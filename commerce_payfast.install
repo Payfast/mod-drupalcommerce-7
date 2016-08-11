@@ -3,6 +3,7 @@
 /**
  * @file
  * Installs the tables required by Commerce PayFast.
+ * Based on:  http://drupal.org/project/commerce_payfast
  */
 
 /**

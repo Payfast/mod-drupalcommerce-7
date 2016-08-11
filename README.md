@@ -1,26 +1,9 @@
-Drupal Commerce Payfast payment module 1.0.1
+Drupal Commerce Payfast payment module 1.0.1 (Based on:  http://drupal.org/project/commerce_payfast)
 =============================================
-
-Copyright © 2011 - 2016 PayFast (Pty) Ltd
-
-LICENSE:
-
-This payment module is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published
-by the Free Software Foundation; either version 3 of the License, or (at
-your option) any later version.
-
-This payment module is distributed in the hope that it will be useful, but
-WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
-License for more details.
-
-Please see http://www.opensource.org/licenses/ for a copy of the GNU Lesser
-General Public License.
 
 INTEGRATION:
 Requirements:-
-Drupal-7.17 ( http://drupal.org/drupal-7.17-release-notes ) or commerce_kickstart 7.x-2.0-rc4 (http://drupal.org/node/1836498 )
+Drupal-7.32 ( http://drupal.org/drupal-7.32-release-notes ) or commerce_kickstart 7.x-2.0-rc4 (http://drupal.org/node/1836498 )
 Commerce 7.x-1.4 ( http://drupal.org/node/1819278 )
 
 Installation:-

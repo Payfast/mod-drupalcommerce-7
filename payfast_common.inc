@@ -2,7 +2,7 @@
 /**
  * payfast_common.inc
  *
- * Copyright (c) 2009-2012 PayFast (Pty) Ltd
+ * Copyright © 2009 - 2016 PayFast (Pty) Ltd
  * 
  * LICENSE:
  * 
@@ -17,7 +17,7 @@
  * License for more details.
  * 
  * @author     Jonathan Smit
- * @copyright  2009-2012 PayFast (Pty) Ltd
+ * @copyright  2009-2016 PayFast (Pty) Ltd
  * @license    http://www.opensource.org/licenses/lgpl-license.php LGPL
  */
 
@@ -27,7 +27,7 @@ define('PF_DEBUG', true);
 //// Create user agent string
 // User agent constituents (for cURL)
 define( 'PF_SOFTWARE_NAME', 'drupalCommerce-7' );
-define( 'PF_SOFTWARE_VER', "7.x-1.x-dev" );
+define( 'PF_SOFTWARE_VER', "7.x-payfast" );
 define( 'PF_MODULE_NAME', 'PayFast Module for Drupal Commerce' );
 define( 'PF_MODULE_VER', '1.0.1' );
 
@@ -150,8 +150,8 @@ function pfValidSignature( $pfData = null, &$pfParamString = null )
     // Dump the submitted variables and calculate security signature
     foreach( $pfData as $key => $val )
     {
-    	if( $key != 'signature' )
-    		$pfParamString .= $key .'='. urlencode( $val ) .'&';
+        if( $key != 'signature' )
+            $pfParamString .= $key .'='. urlencode( $val ) .'&';
     }
 
     // Remove the last '&' from the parameter string
@@ -214,7 +214,7 @@ function pfValidData( $pfHost = 'www.payfast.co.za', $pfParamString = '', $curlU
          
         // Construct Header
         $header = "POST /eng/query/validate HTTP/1.0\r\n";
-       	$header .= "Host: ". $pfHost ."\r\n";
+        $header .= "Host: ". $pfHost ."\r\n";
         $header .= "User-Agent: ". PF_USER_AGENT ."\r\n";
         $header .= "Content-Type: application/x-www-form-urlencoded\r\n";
         $header .= "Content-Length: " . strlen( $pfParamString ) . "\r\n\r\n";
