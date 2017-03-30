@@ -145,23 +145,34 @@ function pfGetData()
  * 
  * @author Jonathan Smit
  */
-function pfValidSignature( $pfData = null, &$pfParamString = null )
+function pfValidSignature( $pfData = null, &$pfParamString = null, $pfPassphrase = null, $server )
 {
     // Dump the submitted variables and calculate security signature
     foreach( $pfData as $key => $val )
     {
         if( $key != 'signature' )
+        {
             $pfParamString .= $key .'='. urlencode( $val ) .'&';
+        }
+        else
+        {
+            break;
+        }
     }
-
-    // Remove the last '&' from the parameter string
     $pfParamString = substr( $pfParamString, 0, -1 );
-    $signature = md5( $pfParamString );
-    
+
+    if( is_null( $pfPassphrase ) ||  $server == 'sandbox' )
+    {
+        $tempParamString = $pfParamString;
+    }
+    else
+    {
+        $tempParamString = $pfParamString."&passphrase=".urlencode( $pfPassphrase );
+    }
+    $signature = md5( $tempParamString );
+
     $result = ( $pfData['signature'] == $signature );
-
     pflog( 'Signature = '. ( $result ? 'valid' : 'invalid' ) );
-
     return( $result );
 }
 
@@ -181,7 +192,7 @@ function pfValidData( $pfHost = 'www.payfast.co.za', $pfParamString = '', $curlU
     pflog( 'Curl URL = '. $curlUrl );
 
     // Use cURL (if available)
-    if( defined( 'PF_CURL' ) )
+    if( false/*defined( 'PF_CURL' )*/ )
     {
         // Create default cURL object
         $ch = curl_init();

@@ -61,6 +61,13 @@ function commerce_payfast_settings_form( $settings = null )
         '#description' => t( 'The Merchant Key as given by the PayFast system.' ),
         '#default_value' => isset( $settings['merchant_key'] ) ? $settings['merchant_key'] : '479f49451e829', '#required' => true, );
 
+    $form['passphrase'] = array(
+        '#type' => 'textfield',
+        '#title' => t( 'PayFast Passphrase' ),
+        '#description' => t( 'The passphrase that is set on your PayFast account.' ),
+        '#default_value' => isset( $settings['passphrase'] ) ? $settings['passphrase'] : '', '#required' => false, );
+
+
     $form['server'] = array( 
         '#type' => 'radios', '#title' => t( 'PayFast server' ), 
         '#options' => array( 'sandbox' => ( 'Sandbox - use for testing' ),
@@ -112,13 +119,30 @@ function commerce_payfast_redirect_form( $form, &$form_state, $order, $payment_m
         'name_last' => $customer['last_name'],
         'email_address' => $customer['mail'],
         // Transaction Details
-        'm_payment_id' => $order->order_id . '-' . REQUEST_TIME, 'amount' => round( commerce_currency_amount_to_decimal( $amount, $currency_code ), 2 ),
+        'm_payment_id' => $order->order_id . '-' . REQUEST_TIME,
+        'amount' => round( commerce_currency_amount_to_decimal( $amount, $currency_code ), 2 ),
         'item_name' => t( 'Order @order_number at @store', array( '@order_number' => $order->order_number, '@store' => variable_get( 'site_name', url( '<front>',
         array( 'absolute' => true ) ) ) ) ),
         'item_description' => t( 'Product count: !count', array( '!count' => commerce_line_items_quantity( $wrapper->
         commerce_line_items, commerce_product_line_item_types() ) ) ), // Transaction Options
-        //'email_confirmation' => '',
+    //    'custom_int1' => $order->order_id,
     );
+
+    foreach ( $wrapper->commerce_line_items as $delta => $line_item_wrapper )
+    {
+        $product_wrapper = $line_item_wrapper->commerce_product;
+
+        if ( !is_null( $product_wrapper->field_cycles->value() ) && !is_null( $product_wrapper->field_frequency->value() )
+        && !is_null( $product_wrapper->field_subscription_type->value() ) && !is_null( $product_wrapper->field_recurring_amount->value() ));
+        {
+            $data['custom_int1'] = $order->order_id;
+            $data['custom_str1'] = gmdate( 'Y-m-d' );
+            $data['subscription_type'] = $product_wrapper->field_subscription_type->value();
+            $data['recurring_amount'] = $product_wrapper->field_recurring_amount->amount->value()/100;
+            $data['frequency'] = $product_wrapper->field_frequency->value();
+            $data['cycles'] = $product_wrapper->field_cycles->value();
+        }
+    }
 
     // Give other modules a chance to alter the payment settings before they're
     // sent off.
@@ -130,15 +154,24 @@ function commerce_payfast_redirect_form( $form, &$form_state, $order, $payment_m
     }
 
     // Generate MD5 security signature
-    $signature = array();
-    foreach ( $data as $name => $value )
+    $pfOutput = '';
+    // Create output string
+    foreach( $data as $key => $value )
     {
-        if ( $value )
-        {
-            $signature[] = $name . '=' . urlencode( $value );
-        }
+        $pfOutput .= $key . '=' . urlencode(trim($value)) . '&';
     }
-    $data['signature'] = md5( implode( '&', $signature ) );
+    $passPhrase = $settings['passphrase'];
+
+    if ( empty( $passPhrase ) || $settings['server'] == 'sandbox' )
+    {
+        $pfOutput = substr( $pfOutput, 0, -1 );
+    }
+    else
+    {
+        $pfOutput = $pfOutput."passphrase=".urlencode( $passPhrase );
+    }
+
+    $data['signature'] = md5( $pfOutput );
     $data['user_agent'] = 'Drupal Commerce 7.x';
 
     $form['#action'] = 'https://' . commerce_payfast_server_url( $settings['server'] ) . '/eng/process';
@@ -188,6 +221,8 @@ function commerce_payfast_process_itn( $payment_method )
 
     require_once ( 'payfast_common.inc' );
 
+    $settings = $payment_method['settings'];
+
     if ( ! pfValidIP( $_SERVER['REMOTE_ADDR'] ) )
     {
         watchdog( 'commerce_payfast', 'PayFast REMOTE_IP mismatch: ' );
@@ -204,7 +239,10 @@ function commerce_payfast_process_itn( $payment_method )
 
     watchdog( 'commerce_payfast', 'ITN HTTP POST received from Payfast: ' . print_r( $data, true ) );
 
-    if ( ! pfValidSignature( $data ) )
+    $passPhrase = $settings['passphrase'];
+    $pfPassPhrase = empty( $passPhrase ) ? null : $passPhrase;
+
+    if ( ! pfValidSignature( $data, $pfParamstring, $pfPassPhrase, $settings['server'] ) )
     {
         watchdog( 'commerce_payfast', 'PayFast error: Invalid signature ' );
         return false;
@@ -230,7 +268,7 @@ function commerce_payfast_process_itn( $payment_method )
 
 	$pfHost = $server = commerce_payfast_server_url( $payment_method['settings']['server'] );
 
-    if ( ! pfValidData( $pfHost, $itnVerifyRequest, "https://$pfHost/eng/query/validate" ) )
+    if ( $itn['payment_status'] != 'CANCELLED' && ! pfValidData( $pfHost, $itnVerifyRequest, "https://$pfHost/eng/query/validate" ) )
     {
         watchdog( 'commerce_payfast', 'ITN POST data not verified', array(), WATCHDOG_ERROR );
         pflog( "ITN POST data integrity mismatch for $request\n" );
@@ -238,27 +276,38 @@ function commerce_payfast_process_itn( $payment_method )
     }
 
     // Exit if the ITN has already been processed.
-    if ( ! empty( $itn['pf_payment_id'] ) && $prior_itn = commerce_payfast_itn_load( $itn['pf_payment_id'] ) )
+    if ( $itn['payment_status'] != 'CANCELLED' )
     {
-            watchdog( 'commerce_payfast', 'Attempted to process an ITN that has already been processed with transaction ID @txn_id.', 
-			array( '@txn_id' => $itn['pf_payment_id'] ), WATCHDOG_NOTICE );
+        if ( !empty($itn['pf_payment_id']) && $prior_itn = commerce_payfast_itn_load($itn['pf_payment_id'] ) )
+        {
+            watchdog( 'commerce_payfast', 'Attempted to process an ITN that has already been processed with transaction ID @txn_id.',
+                array( '@txn_id' => $itn['pf_payment_id'] ), WATCHDOG_NOTICE );
             return false;
+        }
     }
 
     list( $order_id, $timestamp ) = explode( '-', $itn['m_payment_id'] );
 
-     $order = false;
-	
-      if (! empty($order_id))
-	// Load the order in question and validate that the m_payment_id exists
-	$order = commerce_order_load( $order_id );
-		
+    $order = false;
+
+    if ( !empty( $itn['token'] ) && strtotime( $itn['custom_str1'] ) > strtotime( gmdate( 'Y-m-d' ). '+ 2 days' ) )
+    {
+        // Create temporary order to transact against for recurring payment
+        $order = commerce_order_new();
+        commerce_order_save($order);
+    }
+    else
+    {
+        // Load order for once off payment, or initiating a subscription
+        $order = commerce_order_load( $order_id );
+    }
+
     if ( ! $order )
     {
         watchdog( 'commerce_payfast', 'Could not find order matching ITN order #', array(), WATCHDOG_ERROR );
         return false;
     }
-	$order_id = $order->order_id;
+	 $order_id = $order->order_id;
 
     // Set the key payment method variables
     $merchant_settings = array( 'id' => $payment_method['settings']['merchant_id'], 'key' => $payment_method['settings']['merchant_key'], );
@@ -271,33 +320,75 @@ function commerce_payfast_process_itn( $payment_method )
     }
 
     // Unknown status
-    if ( $itn['payment_status'] != 'COMPLETE' )
+    if ( $itn['payment_status'] != 'CANCELLED' )
     {
-        watchdog( 'commerce_payfast', 'Invalid ITN payment status: @payment_status.', array( '@payment_status' => $itn['payment_status'] ), WATCHDOG_ERROR );
-        return false;
+        if ($itn['payment_status'] != 'COMPLETE' )
+        {
+            watchdog('commerce_payfast', 'Invalid ITN payment status: @payment_status.', array('@payment_status' => $itn['payment_status']), WATCHDOG_ERROR);
+            return false;
+        }
     }
 
-    // Create a new payment transaction for the order.
     $transaction = commerce_payment_transaction_new( 'commerce_payfast', $order->order_id );
-    $transaction->instance_id = $payment_method['instance_id'];
 
+    $transaction->instance_id = $payment_method['instance_id'];
     $transaction->remote_id = $itn['pf_payment_id'];
     $transaction->amount = commerce_currency_decimal_to_amount( $itn['amount_gross'], 'ZAR' );
     $transaction->currency_code = 'ZAR';
     $transaction->payload[REQUEST_TIME] = $itn;
     $transaction->remote_status = $itn['payment_status'];
     $transaction->status = COMMERCE_PAYMENT_STATUS_SUCCESS;
-    $transaction->message = t( 'The payment has completed.' );
+    $transaction->subscription_token = $itn['token'];
+    $transaction->order_id = $itn['custom_int1'];
+    $transaction->message = t('The payment has completed.');
 
-    commerce_payment_transaction_save( $transaction );
+    if ( !empty( $itn['token'] ) && strtotime( $itn['custom_str1'] ) <= strtotime( gmdate( 'Y-m-d' ). '+ 2 days' ) )
+    {
+        $transaction->message = t('Subscription initiated for order # ' . $itn['custom_int1'] );
+    }
 
-    watchdog( 'commerce_payfast', 'Valid ITN processed for Order @order_number with ID @txn_id.', 
-	array( '@txn_id' => $itn['pf_payment_id'], '@order_number' => $order->order_number ), WATCHDOG_INFO );
+    if ( !empty( $itn['token'] ) && strtotime( $itn['custom_str1'] ) > strtotime( gmdate( 'Y-m-d' ). '+ 2 days' ) )
+    {
+        $transaction->order_id = $order->order_id;
+        $transaction->message = t('Subscription payment completed for order # ' . $itn['custom_int1'] );
+    }
+
+    if ( $itn['payment_status'] == 'CANCELLED' )
+    {
+        $transaction->message = t( 'Subscription for order # ' . $itn['custom_int1'] . ' cancelled.' );
+        $transaction->status = COMMERCE_PAYMENT_STATUS_FAILURE;
+    }
+
+    commerce_payment_transaction_save($transaction);
 
     $itn['transaction_id'] = $transaction->transaction_id;
     $itn['order_id'] = $order->order_id;
     $itn['server'] = $server;
+    $itn['subscription_token'] = $itn['token'];
+
     commerce_payfast_itn_save( $itn );
+
+    if ( !empty( $itn['token'] ) && strtotime( $itn['custom_str1'] ) > strtotime( gmdate( 'Y-m-d' ). '+ 2 days' ) )
+    {
+        // Set transaction to correct order
+        db_update('commerce_payment_transaction')
+            ->condition('order_id', $order->order_id)
+            ->fields(array('order_id' => $itn['custom_int1']))
+            ->execute();
+
+        db_update('commerce_payfast_itn')
+            ->condition('order_id', $order->order_id)
+            ->fields(array('order_id' => $itn['custom_int1']))
+            ->execute();
+
+        // Delete temporary order
+        db_delete('commerce_order')
+            ->condition('order_id', $order->order_id)
+            ->execute();
+    }
+
+    watchdog( 'commerce_payfast', 'Valid ITN processed for Order @order_number with ID @txn_id.',
+	array( '@txn_id' => $itn['pf_payment_id'], '@order_number' => $order->order_number ), WATCHDOG_INFO );
 }
 
 /**
