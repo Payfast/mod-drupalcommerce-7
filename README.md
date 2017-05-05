@@ -3,8 +3,8 @@ Drupal Commerce Payfast payment module 1.0.1 (Based on:  http://drupal.org/proje
 
 INTEGRATION:
 Requirements:-
-Drupal-7.32 ( http://drupal.org/drupal-7.32-release-notes ) or commerce_kickstart 7.x-2.0-rc4 (http://drupal.org/node/1836498 )
-Commerce 7.x-1.4 ( http://drupal.org/node/1819278 )
+Drupal or commerce_kickstart
+Commerce
 
 Installation:-
 1. Download the module from https://github.com/PayFast/mod-drupalcommerce-7/archive/master.zip and extract the contents into a new folder
