@@ -38,9 +38,9 @@ Subscriptions:-
 
 
 ******************************************************************************
-*                                                                            *
-*    Please see the URL below for all information concerning this module:    *
-*                                                                            *
-*          https://www.payfast.co.za/shopping-carts/drupal-commerce/         *
-*                                                                            *
+
+    Please see the URL below for all information concerning this module:
+
+          https://www.payfast.co.za/shopping-carts/drupal-commerce/
+
 ******************************************************************************
