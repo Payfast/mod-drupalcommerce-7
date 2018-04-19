@@ -132,8 +132,7 @@ function commerce_payfast_redirect_form( $form, &$form_state, $order, $payment_m
     {
         $product_wrapper = $line_item_wrapper->commerce_product;
 
-        if ( !is_null( $product_wrapper->field_cycles->value() ) && !is_null( $product_wrapper->field_frequency->value() )
-        && !is_null( $product_wrapper->field_subscription_type->value() ) && !is_null( $product_wrapper->field_recurring_amount->value() ));
+        if( isset( $form['field_cycles'] ) && isset( $form['field_frequency'] ) && isset( $form['field_subscription_type'] ) && isset( $form['field_recurring_amount'] ) ) 
         {
             $data['custom_int1'] = $order->order_id;
             $data['custom_str1'] = gmdate( 'Y-m-d' );
