@@ -104,8 +104,8 @@ function commerce_payfast_redirect_form( $form, &$form_state, $order, $payment_m
     $customer['last_name'] = $commerce_customer['last_name'];
     $customer['mail'] = $account->mail;
 
-    // @TODO: If user is anonymous then we need to get their email address from
-    //   the "account information" field.
+    // When a user is anonymous then get their email address from order
+    $customer['mail'] = ( !empty( $account->mail ) ? $account->mail : $order->mail );
 
     // Build the data array that will be translated into hidden form values.
     $data = array( // Receiver Details
