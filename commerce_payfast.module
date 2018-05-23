@@ -93,7 +93,6 @@ function commerce_payfast_redirect_form( $form, &$form_state, $order, $payment_m
     $account = user_load( $commerce_customer->uid );
     $commerce_customer = $commerce_customer->commerce_customer_address['und'][0];
 
-    // @TODO: Need to determine the style of name field being used
     if ( empty( $commerce_customer['first_name'] ) )
     {
         $customer['first_name'] = $commerce_customer['name_line'];
@@ -104,8 +103,8 @@ function commerce_payfast_redirect_form( $form, &$form_state, $order, $payment_m
     $customer['last_name'] = $commerce_customer['last_name'];
     $customer['mail'] = $account->mail;
 
-    // @TODO: If user is anonymous then we need to get their email address from
-    //   the "account information" field.
+    // When a user is anonymous then get their email address from order
+    $customer['mail'] = ( !empty( $account->mail ) ? $account->mail : $order->mail );
 
     // Build the data array that will be translated into hidden form values.
     $data = array( // Receiver Details
@@ -127,6 +126,11 @@ function commerce_payfast_redirect_form( $form, &$form_state, $order, $payment_m
         commerce_line_items, commerce_product_line_item_types() ) ) ), // Transaction Options
     //    'custom_int1' => $order->order_id,
     );
+
+    // When a user has not entered a lastname in the full name field, remove lastname from data array
+    if( empty( $commerce_customer['last_name'] ) ){
+        unset( $data['name_last'] );        
+    } 
 
     foreach ( $wrapper->commerce_line_items as $delta => $line_item_wrapper )
     {
