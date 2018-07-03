@@ -1,4 +1,4 @@
-Drupal Commerce Payfast payment module 1.0.1 (Based on:  http://drupal.org/project/commerce_payfast)
+Drupal Commerce Payfast payment module 1.1.3 (Based on:  http://drupal.org/project/commerce_payfast)
 =============================================
 
 INTEGRATION:
