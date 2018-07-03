@@ -17,7 +17,7 @@ define('PF_DEBUG', true);
 define( 'PF_SOFTWARE_NAME', 'drupalCommerce-7' );
 define( 'PF_SOFTWARE_VER', "7.x-payfast" );
 define( 'PF_MODULE_NAME', 'PayFast Module for Drupal Commerce' );
-define( 'PF_MODULE_VER', '1.0.1' );
+define( 'PF_MODULE_VER', '1.1.3' );
 
 // Features
 // - PHP
